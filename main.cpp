@@ -32,7 +32,9 @@ int main()
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE); //tell GLFW we are using core profile
-    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);  //macos neccesary line
+    #ifdef __APPLE__
+        glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+    #endif
 
     //create an 800 by 800 size screen with the name Learn Open GL
     GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "LearnOpenGL", NULL, NULL);
@@ -93,10 +95,17 @@ int main()
 
     //set up vertex data and buffer
     float vertices[] = {
-        -0.5f, -0.5f, 0.0f,
-        0.5f, -0.5f, 0.0f,
-        0.0f,  0.5f, 0.0f
-    }; 
+        0.5f,  0.5f, 0.0f,  // top right
+        0.5f, -0.5f, 0.0f,  // bottom right
+        -0.5f, -0.5f, 0.0f,  // bottom left
+        -0.5f,  0.5f, 0.0f   // top left 
+    };
+
+    //only care about unique indices so we don't need to store duplicates
+    unsigned int indices[] = {  // note that we start from 0!
+        0, 1, 3,   // first triangle
+        1, 2, 3    // second triangle
+    };
 
     unsigned int VAO;
     glGenVertexArrays(1, &VAO); 
@@ -104,12 +113,19 @@ int main()
     unsigned int VBO;// create a buffer id
     glGenBuffers(1, &VBO);  //assign such buffer ID to VBO
 
+    unsigned int EBO;//like vbo bust stores indices of what vertices to draw
+    glGenBuffers(1, &EBO);
+
     // 1. bind Vertex Array Object
     glBindVertexArray(VAO);
 
     //0. Create a vertex buffer object and pass in our vertices
     glBindBuffer(GL_ARRAY_BUFFER, VBO);   //assign said id to a buffer object (Any call to GL_ARRAY_BUFFER will configure the current bound buffer VBO)
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW); //copy user data into current bound buffer. Last arg specify how often buffer used
+
+    //create indices buffer
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW); 
 
     //1. Set how the vertex buffer can be used
     //specifies how the shader applies to the vertex buffer
@@ -133,8 +149,8 @@ int main()
 
         //2. use the liked shader program object
         glUseProgram(shaderProgram);
-        glBindVertexArray(VAO);
-        glDrawArrays(GL_TRIANGLES, 0, 3);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);//drawing elements instead of arrays 
 
         glfwSwapBuffers(window);//swap the buffers
         glfwPollEvents();//takes care of all GLFW events
