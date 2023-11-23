@@ -11,12 +11,6 @@ void processInput(GLFWwindow *window);
 const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HEIGHT = 600;
 
-float vertices[] = {
-    -0.5f, -0.5f, 0.0f,
-     0.5f, -0.5f, 0.0f,
-     0.0f,  0.5f, 0.0f
-}; 
-
 //vertex shader is a vector of 4 length x,y,z and w
 const char *vertexShaderSource = "#version 330 core\n"
     "layout (location = 0) in vec3 aPos;\n"
@@ -29,7 +23,7 @@ const char *fragmentShaderSource = "#version 330 core\n"
     "out vec4 FragColor;\n"
     "void main()\n"
     "{\n"
-    "    FragColor = vec4(1.0f, 0.5f, 0.2f, 1.0f);\n"
+    "    FragColor = vec4(0.7f, 0.0f, 1.0f, 1.0f);\n"
     "}\0"; 
 
 int main()
@@ -37,7 +31,7 @@ int main()
     glfwInit();
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE); //tell GLFW we are using core progile
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE); //tell GLFW we are using core profile
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);  //macos neccesary line
 
     //create an 800 by 800 size screen with the name Learn Open GL
@@ -53,21 +47,6 @@ int main()
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
     
     gladLoadGL();//Load GLAD to configure for OpenGL
-
-    //Specify the viewport of the OpenGL in the window
-    //viewpoert goes from 0,0 to 800,800
-    glViewport(0, 0, 800, 800);
-
-    //set a color
-    glClearColor(0.07f, 0.13f, 0.17f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT);//clean the back buffer
-
-
-    //0. Create a vertex buffer object and pass in our vertices
-    unsigned int VBO;// create a buffer id
-    glGenBuffers(1, &VBO);  //assign such buffer ID to VBO
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);   //assign said id to a buffer object (Any call to GL_ARRAY_BUFFER will configure the current bound buffer VBO)
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW); //copy user data into current bound buffer. Last arg specify how often buffer used
 
     // once again need to create shader object
     unsigned int vertexShader;
@@ -108,11 +87,29 @@ int main()
         std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog << std::endl;
     }
 
-    //2. use the liked shader program object
-    glUseProgram(shaderProgram);
-    //delete shaders after you are done using them
+    //delete shaders after you linking success
     glDeleteShader(vertexShader);
     glDeleteShader(fragmentShader);  
+
+    //set up vertex data and buffer
+    float vertices[] = {
+        -0.5f, -0.5f, 0.0f,
+        0.5f, -0.5f, 0.0f,
+        0.0f,  0.5f, 0.0f
+    }; 
+
+    unsigned int VAO;
+    glGenVertexArrays(1, &VAO); 
+
+    unsigned int VBO;// create a buffer id
+    glGenBuffers(1, &VBO);  //assign such buffer ID to VBO
+
+    // 1. bind Vertex Array Object
+    glBindVertexArray(VAO);
+
+    //0. Create a vertex buffer object and pass in our vertices
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);   //assign said id to a buffer object (Any call to GL_ARRAY_BUFFER will configure the current bound buffer VBO)
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW); //copy user data into current bound buffer. Last arg specify how often buffer used
 
     //1. Set how the vertex buffer can be used
     //specifies how the shader applies to the vertex buffer
@@ -133,6 +130,11 @@ int main()
         //set color
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);//only change color buffer bit
+
+        //2. use the liked shader program object
+        glUseProgram(shaderProgram);
+        glBindVertexArray(VAO);
+        glDrawArrays(GL_TRIANGLES, 0, 3);
 
         glfwSwapBuffers(window);//swap the buffers
         glfwPollEvents();//takes care of all GLFW events
