@@ -25,7 +25,12 @@ const char *vertexShaderSource = "#version 330 core\n"
     "   gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);\n"
     "}\0";
 
-
+const char *fragmentShaderSource = "#version 330 core\n"
+    "out vec4 FragColor;\n"
+    "void main()\n"
+    "{\n"
+    "    FragColor = vec4(1.0f, 0.5f, 0.2f, 1.0f);\n"
+    "}\0"; 
 
 int main()
 {
@@ -58,6 +63,7 @@ int main()
     glClear(GL_COLOR_BUFFER_BIT);//clean the back buffer
 
 
+    //0. Create a vertex buffer object and pass in our vertices
     unsigned int VBO;// create a buffer id
     glGenBuffers(1, &VBO);  //assign such buffer ID to VBO
     glBindBuffer(GL_ARRAY_BUFFER, VBO);   //assign said id to a buffer object (Any call to GL_ARRAY_BUFFER will configure the current bound buffer VBO)
@@ -82,6 +88,41 @@ int main()
         std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog << std::endl;
     }
 
+    //create another shader object for fragment shadder
+    unsigned int fragmentShader;
+    fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+    glShaderSource(fragmentShader, 1, &fragmentShaderSource, NULL);//attach source to fragment shader
+    glCompileShader(fragmentShader);
+
+    //create a shader program object to link shader to the next shader
+    unsigned int shaderProgram;
+    shaderProgram = glCreateProgram();
+    glAttachShader(shaderProgram, vertexShader);
+    glAttachShader(shaderProgram, fragmentShader);
+    glLinkProgram(shaderProgram);
+
+    //check to see if linking was succesful
+    glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
+    if(!success) {
+        glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
+        std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog << std::endl;
+    }
+
+    //2. use the liked shader program object
+    glUseProgram(shaderProgram);
+    //delete shaders after you are done using them
+    glDeleteShader(vertexShader);
+    glDeleteShader(fragmentShader);  
+
+    //1. Set how the vertex buffer can be used
+    //specifies how the shader applies to the vertex buffer
+    glVertexAttribPointer(0, //sets the location of the vertex attribute to 0
+                          3, //how big is each vertex atribute
+                          GL_FLOAT, //what data type is the vertex
+                          GL_FALSE, //if we want data to be normalized from 0 to 1
+                          3 * sizeof(float), //how far the starting position of each val is from the next
+                          (void*)0);//where it starts
+    glEnableVertexAttribArray(0);  
  
     //prevent program from reaching end and terminating
     while(!glfwWindowShouldClose(window)){
