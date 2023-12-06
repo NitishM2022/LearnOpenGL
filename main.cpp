@@ -108,7 +108,7 @@ int main()
         //change the color based on time
         float timeValue = glfwGetTime();
         float timeColor = (sin(timeValue) / 2.0f) + 0.5f;
-        shaderProgram.setFloat("timeColor", timeColor);
+        shaderProgram.setFloat("timeValue", timeValue);
 
         //render triangle
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
