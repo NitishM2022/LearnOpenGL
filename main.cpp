@@ -20,10 +20,11 @@ const char *vertexShaderSource = "#version 330 core\n"
     "}\0";
 
 const char *fragmentShaderSource = "#version 330 core\n"
+    "uniform vec4 ourColor;\n"
     "out vec4 FragColor;\n"
     "void main()\n"
     "{\n"
-    "    FragColor = vec4(0.7f, 0.0f, 1.0f, 1.0f);\n"
+    "    FragColor = ourColor;\n"
     "}\0"; 
 
 int main()
@@ -95,16 +96,16 @@ int main()
 
     //set up vertex data and buffer
     float vertices[] = {
+        -0.5f,  0.5f, 0.0f,   // top left 
+        0.0f, 0.5f, 0.0f,  // top middle
         0.5f,  0.5f, 0.0f,  // top right
-        0.5f, -0.5f, 0.0f,  // bottom right
         -0.5f, -0.5f, 0.0f,  // bottom left
-        -0.5f,  0.5f, 0.0f   // top left 
+        0.5f, -0.5f, 0.0f,  // bottom right 
     };
 
     //only care about unique indices so we don't need to store duplicates
     unsigned int indices[] = {  // note that we start from 0!
-        0, 1, 3,   // first triangle
-        1, 2, 3    // second triangle
+        1, 3, 4,   // first triangle
     };
 
     unsigned int VAO;
@@ -129,7 +130,7 @@ int main()
 
     //1. Set how the vertex buffer can be used
     //specifies how the shader applies to the vertex buffer
-    glVertexAttribPointer(0, //sets the location of the vertex attribute to 0
+    glVertexAttribPointer(0, //sets the location of the vertex attribute to 0. So where the data in the buffer can be found
                           3, //how big is each vertex atribute
                           GL_FLOAT, //what data type is the vertex
                           GL_FALSE, //if we want data to be normalized from 0 to 1
@@ -149,6 +150,17 @@ int main()
 
         //2. use the liked shader program object
         glUseProgram(shaderProgram);
+
+
+        //change the color based on time
+        float timeValue = glfwGetTime();
+        float greenValue = (sin(timeValue) / 2.0f) + 0.5f;
+        int vertexColorLocation = glGetUniformLocation(shaderProgram, "ourColor");
+        glUseProgram(shaderProgram);
+        glUniform4f(vertexColorLocation, 0.0f, greenValue, 0.0f, 1.0f);
+
+
+        //render triangle
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);//drawing elements instead of arrays 
 
@@ -156,7 +168,7 @@ int main()
         glfwPollEvents();//takes care of all GLFW events
     }
 
-    glfwTerminate();//Terminate GLW befoer ending the program
+    glfwTerminate();//Terminate GLW before ending the program
     return 0;
 }
 
