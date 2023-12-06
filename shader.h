@@ -51,9 +51,6 @@ public:
         const char* vShaderCode = vertexCode.c_str();
         const char* fShaderCode = fragmentCode.c_str();
 
-        std::cout << vShaderCode << std::endl;
-        std::cout << fShaderCode << std::endl;
-
         unsigned int vertexShader, fragmentShader;
 
         // once again need to create shader object

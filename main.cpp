@@ -106,12 +106,9 @@ int main()
         //2. use shader Object
         shaderProgram.use();
         //change the color based on time
-        // float timeValue = glfwGetTime();
-        // float greenValue = (sin(timeValue) / 2.0f) + 0.5f;
-        // int vertexColorLocation = glGetUniformLocation(shaderProgram, "ourColor");
-        // glUseProgram(shaderProgram);
-        // glUniform4f(vertexColorLocation, 0.0f, greenValue, 0.0f, 1.0f);
-
+        float timeValue = glfwGetTime();
+        float timeColor = (sin(timeValue) / 2.0f) + 0.5f;
+        shaderProgram.setFloat("timeColor", timeColor);
 
         //render triangle
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
