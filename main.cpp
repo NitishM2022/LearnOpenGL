@@ -1,6 +1,8 @@
 #include <iostream>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
+
+#include "stb_image.h"
 #include "shader.h"
 
 using namespace std;
@@ -41,19 +43,28 @@ int main()
 
     //set up vertex data and buffer
     float vertices[] = {
-        // position             //color
-        -0.5f,  0.5f, 0.0f,     0.0f, 0.0f, 1.0f,// top left 
-        0.0f, 0.5f, 0.0f,       0.0f, 0.0f, 1.0f,// top middle
-        0.5f,  0.5f, 0.0f,      0.0f, 0.0f, 1.0f,// top right
-        -0.5f, -0.5f, 0.0f,     0.0f, 1.0f, 0.0f,// bottom left
-        0.5f, -0.5f, 0.0f,      1.0f, 0.0f, 0.0f,// bottom right 
+        //position          //color             //texture coords
+        0.5f,  0.5f, 0.0f,  0.0f, 0.0f, 1.0f,   1.0f, 1.0f,//top right
+        0.5f, -0.5f, 0.0f,  1.0f, 0.0f, 0.0f,   1.0f, 0.0f,//bottom right 
+        0.0f, 0.5f, 0.0f,   0.0f, 0.0f, 1.0f,   0.0f, 0.0f,//top middle
+        0.0f, -0.5f, 0.0f,  0.0f, 0.0f, 0.0f,   0.0f, 0.0f,//bottom middle
+        -0.5f,  0.5f, 0.0f, 0.0f, 0.0f, 1.0f,   0.0f, 1.0f,//top left 
+        -0.5f, -0.5f, 0.0f, 0.0f, 1.0f, 0.0f,   0.0f, 0.0f,//bottom left
     };
 
     //only care about unique indices so we don't need to store duplicates
     unsigned int indices[] = {  // note that we start from 0!
-        1, 3, 4,   // first triangle
+        4, 5, 1,   // first triangle
+        4, 0, 1,   // second triangle
     };
 
+    //texture coordinates
+    // float texCoords[] = {
+    //     0.0f, 0.0f,  // lower-left corner  
+    //     1.0f, 0.0f,  // lower-right corner
+    //     0.5f, 1.0f   // top-center corner
+    // };
+    
     unsigned int VAO;
     glGenVertexArrays(1, &VAO); 
 
@@ -80,18 +91,60 @@ int main()
                           3, //how big is each vertex atribute
                           GL_FLOAT, //what data type is the vertex
                           GL_FALSE, //if we want data to be normalized from 0 to 1
-                          6 * sizeof(float), //how far the starting position of each val is from the next
+                          8 * sizeof(float), //how far the starting position of each val is from the next
                           (void*)0);//where it starts
     glEnableVertexAttribArray(0);  
 
-    //attrivute for color
+    //attribute for color
     glVertexAttribPointer(1, //sets the location of the vertex attribute to 0. So where the data in the buffer can be found
                           3, //how elements is each color atribute
                           GL_FLOAT, //what data type is the color
                           GL_FALSE, //if we want data to be normalized from 0 to 1
-                          6 * sizeof(float), //how far the starting position of each set of colors to the next (stride)
+                          8 * sizeof(float), //how far the starting position of each set of colors to the next (stride)
                           (void*)(3 * sizeof(float)));//where it starts
     glEnableVertexAttribArray(1);  
+
+    //attribute for texture
+    glVertexAttribPointer(2, //sets the location of the vertex attribute to 0. So where the data in the buffer can be found
+                          2, //how elements is each color atribute
+                          GL_FLOAT, //what data type is the color
+                          GL_FALSE, //if we want data to be normalized from 0 to 1
+                          8 * sizeof(float), //how far the starting position of each set of colors to the next (stride)
+                          (void*)(6 * sizeof(float)));//where it starts
+    glEnableVertexAttribArray(2);  
+
+    //load textures
+    unsigned int texture;
+    glGenTextures(1, &texture); //link texture to unsigned int
+    glBindTexture(GL_TEXTURE_2D, texture);  //bind texture so all command apply to binded texture
+    
+    // set the texture wrapping/filtering options (on the currently bound texture object)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    //image loader
+    int width, height, nrChannels;
+    unsigned char *data = stbi_load("textures/wood_container.jpg", &width, &height, &nrChannels, 0); 
+
+    if(data){
+         glTexImage2D(GL_TEXTURE_2D, //only bound 2d textures will be affected
+                 0, //sets what mipmap level you want to creat texture if you want manual control (would have to call function again for every level)
+                 GL_RGB, // we want to store texture in rgb
+                 width, //width of texture
+                 height, //height of texture
+                 0, //some legacy stuff (should always be 0)
+                 GL_RGB, //image rbg
+                 GL_UNSIGNED_BYTE, //stored image as unsigned char array
+                 data //actual image data
+                 );
+        glGenerateMipmap(GL_TEXTURE_2D);//generates bunch of different size versions of a texture
+    }else{
+        cout << "Failed to load texture" << endl;
+    }
+    stbi_image_free(data);
+
  
     //prevent program from reaching end and terminating
     while(!glfwWindowShouldClose(window)){
@@ -107,12 +160,13 @@ int main()
         shaderProgram.use();
         //change the color based on time
         float timeValue = glfwGetTime();
-        float timeColor = (sin(timeValue) / 2.0f) + 0.5f;
+        //float timeColor = (sin(timeValue) / 2.0f) + 0.5f;
         shaderProgram.setFloat("timeValue", timeValue);
 
         //render triangle
+        glBindTexture(GL_TEXTURE_2D, texture);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-        glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, 0);//drawing elements instead of arrays 
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);//drawing elements instead of arrays 
 
         glfwSwapBuffers(window);//swap the buffers
         glfwPollEvents();//takes care of all GLFW events
