@@ -44,12 +44,12 @@ int main()
     //set up vertex data and buffer
     float vertices[] = {
         //position          //color             //texture coords
-        0.5f,  0.5f, 0.0f,  0.0f, 0.0f, 1.0f,   1.0f, 1.0f,//top right
-        0.5f, -0.5f, 0.0f,  1.0f, 0.0f, 0.0f,   1.0f, 0.0f,//bottom right 
+        0.5f,  0.5f, 0.0f,  1.0f, 0.0f, 0.0f,   2.0f, 2.0f,//top right
+        0.5f, -0.5f, 0.0f,  0.0f, 1.0f, 0.0f,   2.0f, 0.0f,//bottom right 
         0.0f, 0.5f, 0.0f,   0.0f, 0.0f, 1.0f,   0.0f, 0.0f,//top middle
         0.0f, -0.5f, 0.0f,  0.0f, 0.0f, 0.0f,   0.0f, 0.0f,//bottom middle
-        -0.5f,  0.5f, 0.0f, 0.0f, 0.0f, 1.0f,   0.0f, 1.0f,//top left 
-        -0.5f, -0.5f, 0.0f, 0.0f, 1.0f, 0.0f,   0.0f, 0.0f,//bottom left
+        -0.5f,  0.5f, 0.0f, 1.0f, 1.0f, 0.0f,   0.0f, 2.0f,//top left 
+        -0.5f, -0.5f, 0.0f, 0.0f, 0.0f, 1.0f,   0.0f, 0.0f,//bottom left
     };
 
     //only care about unique indices so we don't need to store duplicates
@@ -64,7 +64,7 @@ int main()
     //     1.0f, 0.0f,  // lower-right corner
     //     0.5f, 1.0f   // top-center corner
     // };
-    
+
     unsigned int VAO;
     glGenVertexArrays(1, &VAO); 
 
@@ -114,9 +114,10 @@ int main()
     glEnableVertexAttribArray(2);  
 
     //load textures
-    unsigned int texture;
-    glGenTextures(1, &texture); //link texture to unsigned int
-    glBindTexture(GL_TEXTURE_2D, texture);  //bind texture so all command apply to binded texture
+    unsigned int texture1, texture2;
+    glGenTextures(1, &texture1); //link texture to unsigned int
+    glActiveTexture(GL_TEXTURE0); // activate the texture unit first before binding texture
+    glBindTexture(GL_TEXTURE_2D, texture1);  //bind texture so all command apply to binded texture
     
     // set the texture wrapping/filtering options (on the currently bound texture object)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	
@@ -126,6 +127,7 @@ int main()
 
     //image loader
     int width, height, nrChannels;
+    stbi_set_flip_vertically_on_load(true);  
     unsigned char *data = stbi_load("textures/wood_container.jpg", &width, &height, &nrChannels, 0); 
 
     if(data){
@@ -145,7 +147,33 @@ int main()
     }
     stbi_image_free(data);
 
+    // texture 2
+    glGenTextures(1, &texture2);
+    glBindTexture(GL_TEXTURE_2D, texture2);
+    // set the texture wrapping parameters
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	// set texture wrapping to GL_REPEAT (default wrapping method)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    // set texture filtering parameters
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    // load image, create texture and generate mipmaps
+    data = stbi_load("textures/awesome_face.png", &width, &height, &nrChannels, 0);
+    if (data)
+    {
+        // note that the awesomeface.png has transparency and thus an alpha channel, so make sure to tell OpenGL the data type is of GL_RGBA
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+        glGenerateMipmap(GL_TEXTURE_2D);
+    }
+    else
+    {
+        std::cout << "Failed to load texture" << std::endl;
+    }
+    stbi_image_free(data);
  
+    shaderProgram.use();//must activate shader before setting uniforms
+    shaderProgram.setInt("texture1", 0);
+    shaderProgram.setInt("texture2", 1);
+
     //prevent program from reaching end and terminating
     while(!glfwWindowShouldClose(window)){
 
@@ -163,8 +191,13 @@ int main()
         //float timeColor = (sin(timeValue) / 2.0f) + 0.5f;
         shaderProgram.setFloat("timeValue", timeValue);
 
+        // bind textures on corresponding texture units
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, texture1);
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, texture2);
+
         //render triangle
-        glBindTexture(GL_TEXTURE_2D, texture);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);//drawing elements instead of arrays 
 
