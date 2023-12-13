@@ -1,6 +1,11 @@
 #include <iostream>
+
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
+
+#include "glm/glm/glm.hpp"
+#include "glm/glm/gtc/matrix_transform.hpp"
+#include "glm/glm/gtc/type_ptr.hpp"
 
 #include "stb_image.h"
 #include "shader.h"
@@ -173,6 +178,19 @@ int main()
     shaderProgram.use();//must activate shader before setting uniforms
     shaderProgram.setInt("texture1", 0);
     shaderProgram.setInt("texture2", 1);
+
+    //scale and rotate
+    glm::mat4 trans = glm::mat4(1.0f);
+    trans = glm::rotate(trans, glm::radians(90.0f), glm::vec3(0.0, 0.0, 1.0));
+    trans = glm::scale(trans, glm::vec3(0.5, 0.5, 0.5));  
+
+    //set uniform in vertex shader
+    unsigned int transformLoc = glGetUniformLocation(shaderProgram.shaderProgram, "transform");
+    glUniformMatrix4fv(transformLoc, //uniform location
+                         1, //number of matrices
+                         GL_FALSE, // do you want to transpose (swap row and columns)
+                         glm::value_ptr(trans) //actual matrix
+                         );
 
     //prevent program from reaching end and terminating
     while(!glfwWindowShouldClose(window)){
