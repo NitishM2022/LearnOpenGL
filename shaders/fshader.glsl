@@ -2,7 +2,7 @@
 #define PI 3.1415926535897932384626433832795
 out vec4 FragColor;
 
-in vec3 ourColor;
+//in vec3 ourColor;
 in vec2 TexCoord;
 uniform float timeValue; // we set this variable in the OpenGL code.
 //uniform sampler2D ourTexture;

@@ -46,16 +46,60 @@ int main()
     //build and compile shaders
     Shader shaderProgram("shaders/vshader.glsl", "shaders/fshader.glsl");
 
-    //set up vertex data and buffer
+    // //set up vertex data and buffer
+    // float vertices[] = {
+    //     //position          //color             //texture coords
+    //     0.5f,  0.5f, 0.0f,  1.0f, 0.0f, 0.0f,   2.0f, 2.0f,//top right
+    //     0.5f, -0.5f, 0.0f,  0.0f, 1.0f, 0.0f,   2.0f, 0.0f,//bottom right 
+    //     0.0f, 0.5f, 0.0f,   0.0f, 0.0f, 1.0f,   0.0f, 0.0f,//top middle
+    //     0.0f, -0.5f, 0.0f,  0.0f, 0.0f, 0.0f,   0.0f, 0.0f,//bottom middle
+    //     -0.5f,  0.5f, 0.0f, 1.0f, 1.0f, 0.0f,   0.0f, 2.0f,//top left 
+    //     -0.5f, -0.5f, 0.0f, 0.0f, 0.0f, 1.0f,   0.0f, 0.0f,//bottom left
+    // };
+
     float vertices[] = {
-        //position          //color             //texture coords
-        0.5f,  0.5f, 0.0f,  1.0f, 0.0f, 0.0f,   2.0f, 2.0f,//top right
-        0.5f, -0.5f, 0.0f,  0.0f, 1.0f, 0.0f,   2.0f, 0.0f,//bottom right 
-        0.0f, 0.5f, 0.0f,   0.0f, 0.0f, 1.0f,   0.0f, 0.0f,//top middle
-        0.0f, -0.5f, 0.0f,  0.0f, 0.0f, 0.0f,   0.0f, 0.0f,//bottom middle
-        -0.5f,  0.5f, 0.0f, 1.0f, 1.0f, 0.0f,   0.0f, 2.0f,//top left 
-        -0.5f, -0.5f, 0.0f, 0.0f, 0.0f, 1.0f,   0.0f, 0.0f,//bottom left
-    };
+    -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+     0.5f, -0.5f, -0.5f,  1.0f, 0.0f,
+     0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+     0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+    -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
+    -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+
+    -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+     0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+     0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+     0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+    -0.5f,  0.5f,  0.5f,  0.0f, 1.0f,
+    -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+
+    -0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+    -0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+    -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+    -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+    -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+    -0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+
+     0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+     0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+     0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+     0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+     0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+     0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+
+    -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+     0.5f, -0.5f, -0.5f,  1.0f, 1.0f,
+     0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+     0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+    -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+    -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+
+    -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
+     0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+     0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+     0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+    -0.5f,  0.5f,  0.5f,  0.0f, 0.0f,
+    -0.5f,  0.5f, -0.5f,  0.0f, 1.0f
+};
 
     //only care about unique indices so we don't need to store duplicates
     unsigned int indices[] = {  // note that we start from 0!
@@ -76,8 +120,8 @@ int main()
     unsigned int VBO;// create a buffer id
     glGenBuffers(1, &VBO);  //assign such buffer ID to VBO
 
-    unsigned int EBO;//like vbo bust stores indices of what vertices to draw
-    glGenBuffers(1, &EBO);
+    // unsigned int EBO;//like vbo bust stores indices of what vertices to draw
+    // glGenBuffers(1, &EBO);
 
     // 1. bind Vertex Array Object
     glBindVertexArray(VAO);
@@ -86,9 +130,9 @@ int main()
     glBindBuffer(GL_ARRAY_BUFFER, VBO);   //assign said id to a buffer object (Any call to GL_ARRAY_BUFFER will configure the current bound buffer VBO)
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW); //copy user data into current bound buffer. Last arg specify how often buffer used
 
-    //create indices buffer
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW); 
+    // //create indices buffer
+    // glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+    // glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW); 
 
     //1. Set how the vertex buffer can be used
     //specifies how the shader applies to the vertex buffer
@@ -96,27 +140,27 @@ int main()
                           3, //how big is each vertex atribute
                           GL_FLOAT, //what data type is the vertex
                           GL_FALSE, //if we want data to be normalized from 0 to 1
-                          8 * sizeof(float), //how far the starting position of each val is from the next
+                          5 * sizeof(float), //how far the starting position of each val is from the next
                           (void*)0);//where it starts
     glEnableVertexAttribArray(0);  
 
-    //attribute for color
-    glVertexAttribPointer(1, //sets the location of the vertex attribute to 0. So where the data in the buffer can be found
-                          3, //how elements is each color atribute
-                          GL_FLOAT, //what data type is the color
-                          GL_FALSE, //if we want data to be normalized from 0 to 1
-                          8 * sizeof(float), //how far the starting position of each set of colors to the next (stride)
-                          (void*)(3 * sizeof(float)));//where it starts
-    glEnableVertexAttribArray(1);  
+    // //attribute for color
+    // glVertexAttribPointer(1, //sets the location of the vertex attribute to 0. So where the data in the buffer can be found
+    //                       3, //how elements is each color atribute
+    //                       GL_FLOAT, //what data type is the color
+    //                       GL_FALSE, //if we want data to be normalized from 0 to 1
+    //                       8 * sizeof(float), //how far the starting position of each set of colors to the next (stride)
+    //                       (void*)(3 * sizeof(float)));//where it starts
+    // glEnableVertexAttribArray(1);  
 
     //attribute for texture
-    glVertexAttribPointer(2, //sets the location of the vertex attribute to 0. So where the data in the buffer can be found
+    glVertexAttribPointer(1, //sets the location of the vertex attribute to 0. So where the data in the buffer can be found
                           2, //how elements is each color atribute
                           GL_FLOAT, //what data type is the color
                           GL_FALSE, //if we want data to be normalized from 0 to 1
-                          8 * sizeof(float), //how far the starting position of each set of colors to the next (stride)
-                          (void*)(6 * sizeof(float)));//where it starts
-    glEnableVertexAttribArray(2);  
+                          5 * sizeof(float), //how far the starting position of each set of colors to the next (stride)
+                          (void*)(3 * sizeof(float)));//where it starts
+    glEnableVertexAttribArray(1);  
 
     //load textures
     unsigned int texture1, texture2;
@@ -191,36 +235,49 @@ int main()
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);//only change color buffer bit
 
-        //scale and rotate
-        glm::mat4 trans = glm::mat4(1.0f);
-        trans = glm::rotate(trans, (float)glfwGetTime(), glm::vec3(0.0f, 0.0f, 1.0f));
-        trans = glm::translate(trans, glm::vec3(0.5f, -0.5f, 0.0f));
-
-        //2. use shader Object
-        shaderProgram.use();
-
-        //set uniform in vertex shader
-        unsigned int transformLoc = glGetUniformLocation(shaderProgram.shaderProgram, "transform");
-        glUniformMatrix4fv(transformLoc, //uniform location
-                         1, //number of matrices
-                         GL_FALSE, // do you want to transpose (swap row and columns)
-                         glm::value_ptr(trans) //actual matrix
-                         );
-
-        //change the color based on time
-        float timeValue = glfwGetTime();
-        //float timeColor = (sin(timeValue) / 2.0f) + 0.5f;
-        shaderProgram.setFloat("timeValue", timeValue);
-
         // bind textures on corresponding texture units
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, texture1);
         glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D, texture2);
 
+        //setup view matrices
+        //linear transformations on global vertice space
+        glm::mat4 model = glm::mat4(1.0f);
+        model = glm::rotate(model, glm::radians(-55.0f), glm::vec3(1.0f, 0.0f, 0.0f)); 
+        model = glm::rotate(model, (float)glfwGetTime() * glm::radians(50.0f), glm::vec3(0.5f, 1.0f, 0.0f));  
+
+        //camera transformation
+        glm::mat4 view = glm::mat4(1.0f);
+        // note that we're translating the scene in the reverse direction of where we want to move
+        view = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f)); 
+
+        //perspective
+        glm::mat4 projection;
+        projection = glm::perspective(glm::radians(45.0f), 800.0f / 600.0f, 0.1f, 100.0f);
+
+        //2. use shader Object
+        shaderProgram.use();
+
+        //set uniform in vertex shader
+        int modelLoc = glGetUniformLocation(shaderProgram.shaderProgram, "model");
+        glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+
+        int viewLoc = glGetUniformLocation(shaderProgram.shaderProgram, "view");
+        glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
+
+        int projLoc = glGetUniformLocation(shaderProgram.shaderProgram, "projection");
+        glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(projection));
+
+        //change the color based on time
+        float timeValue = glfwGetTime();
+        //float timeColor = (sin(timeValue) / 2.0f) + 0.5f;
+        shaderProgram.setFloat("timeValue", timeValue);
+
         //render triangle
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);//drawing elements instead of arrays 
+        //glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);//drawing elements instead of arrays 
+        glBindVertexArray(VAO);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
 
         glfwSwapBuffers(window);//swap the buffers
         glfwPollEvents();//takes care of all GLFW events
