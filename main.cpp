@@ -179,18 +179,7 @@ int main()
     shaderProgram.setInt("texture1", 0);
     shaderProgram.setInt("texture2", 1);
 
-    //scale and rotate
-    glm::mat4 trans = glm::mat4(1.0f);
-    trans = glm::rotate(trans, glm::radians(90.0f), glm::vec3(0.0, 0.0, 1.0));
-    trans = glm::scale(trans, glm::vec3(0.5, 0.5, 0.5));  
 
-    //set uniform in vertex shader
-    unsigned int transformLoc = glGetUniformLocation(shaderProgram.shaderProgram, "transform");
-    glUniformMatrix4fv(transformLoc, //uniform location
-                         1, //number of matrices
-                         GL_FALSE, // do you want to transpose (swap row and columns)
-                         glm::value_ptr(trans) //actual matrix
-                         );
 
     //prevent program from reaching end and terminating
     while(!glfwWindowShouldClose(window)){
@@ -202,8 +191,22 @@ int main()
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);//only change color buffer bit
 
+        //scale and rotate
+        glm::mat4 trans = glm::mat4(1.0f);
+        trans = glm::rotate(trans, (float)glfwGetTime(), glm::vec3(0.0f, 0.0f, 1.0f));
+        trans = glm::translate(trans, glm::vec3(0.5f, -0.5f, 0.0f));
+
         //2. use shader Object
         shaderProgram.use();
+
+        //set uniform in vertex shader
+        unsigned int transformLoc = glGetUniformLocation(shaderProgram.shaderProgram, "transform");
+        glUniformMatrix4fv(transformLoc, //uniform location
+                         1, //number of matrices
+                         GL_FALSE, // do you want to transpose (swap row and columns)
+                         glm::value_ptr(trans) //actual matrix
+                         );
+
         //change the color based on time
         float timeValue = glfwGetTime();
         //float timeColor = (sin(timeValue) / 2.0f) + 0.5f;
