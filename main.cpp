@@ -3,21 +3,36 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
-#include "glm/glm/glm.hpp"
-#include "glm/glm/gtc/matrix_transform.hpp"
-#include "glm/glm/gtc/type_ptr.hpp"
+#include "glm/glm.hpp"
+#include "glm/gtc/matrix_transform.hpp"
+#include "glm/gtc/type_ptr.hpp"
+#define GLM_ENABLE_EXPERIMENTAL
+#include "glm/ext.hpp"
 
 #include "stb_image.h"
 #include "shader.h"
+#include "camera.h"
 
 using namespace std;
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow *window);
+glm::mat4 lookaAt(glm::vec3 camPos, glm::vec3 target, glm::vec3 U);
 
 // settings
 const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HEIGHT = 600;
+
+//Camera
+//these vectors represent the axis of the camera, and they are represented in world coordinates
+glm::vec3 V = glm::vec3(0.0f, 1.0f, 0.0f); //Up
+glm::vec3 N = glm::vec3(0.0f, 0.0f, 1.0f); //direction (Not such a great name since it points opposite to the side the camera is facing)
+Camera camera(glm::vec3(0.0f, 0.0f, 3.0f), V, N);
+
+
+// timing
+float deltaTime = 0.0f;	// time between current frame and last frame
+float lastFrame = 0.0f; 
 
 int main()
 {
@@ -120,10 +135,10 @@ int main()
     };
 
     //only care about unique indices so we don't need to store duplicates
-    unsigned int indices[] = {  // note that we start from 0!
-        4, 5, 1,   // first triangle
-        4, 0, 1,   // second triangle
-    };
+    // unsigned int indices[] = {  // note that we start from 0!
+    //     4, 5, 1,   // first triangle
+    //     4, 0, 1,   // second triangle
+    // };
 
     //texture coordinates
     // float texCoords[] = {
@@ -162,7 +177,7 @@ int main()
                           (void*)0);//where it starts
     glEnableVertexAttribArray(0);  
 
-    // //attribute for color
+    //attribute for color
     // glVertexAttribPointer(1, //sets the location of the vertex attribute to 0. So where the data in the buffer can be found
     //                       3, //how elements is each color atribute
     //                       GL_FLOAT, //what data type is the color
@@ -241,10 +256,13 @@ int main()
     shaderProgram.setInt("texture1", 0);
     shaderProgram.setInt("texture2", 1);
 
-
-
     //prevent program from reaching end and terminating
     while(!glfwWindowShouldClose(window)){
+        // per-frame time logic
+        // --------------------
+        float currentFrame = static_cast<float>(glfwGetTime());
+        deltaTime = currentFrame - lastFrame;
+        lastFrame = currentFrame;
 
         //input
         processInput(window);
@@ -259,17 +277,12 @@ int main()
         glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D, texture2);
 
-        //setup view matrices
-        //linear transformations on global vertice space
-
-        //camera transformation
-        glm::mat4 view = glm::mat4(1.0f);
-        // note that we're translating the scene in the reverse direction of where we want to move
-        view = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f)); 
+        //you must transpose due to column major ordering
+        glm::mat4 view = camera.GetMatrix();
 
         //perspective
         glm::mat4 projection;
-        projection = glm::perspective(glm::radians(45.0f), 800.0f / 600.0f, 0.1f, 100.0f);
+        projection = glm::perspective(glm::radians(45.0f), (float) SCR_WIDTH / (float) SCR_HEIGHT, 0.1f, 100.0f);
 
         //2. use shader Object
         shaderProgram.use();
@@ -292,6 +305,7 @@ int main()
         for(unsigned int i = 0; i < 10; i++)
         {
             glm::mat4 model = glm::mat4(1.0f);
+            //model = glm::rotate(model, glm::radians(-10.0f), glm::vec3(1.0f, 0.0f, 0.0f));  
             model = glm::translate(model, cubePositions[i]);
             float angle = 20.0f * i; 
             model = glm::rotate(model, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
@@ -315,9 +329,19 @@ int main()
 // ---------------------------------------------------------------------------------------------------------
 void processInput(GLFWwindow *window)
 {
-    if(glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
+    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(window, true);
+
+    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+        camera.ProcessKeyboard(FORWARD, deltaTime);
+    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+        camera.ProcessKeyboard(BACKWARD, deltaTime);
+    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+        camera.ProcessKeyboard(LEFT, deltaTime);
+    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+        camera.ProcessKeyboard(RIGHT, deltaTime);
 }
+
 
 // glfw: whenever the window size changed (by OS or user resize) this callback function executes
 // ---------------------------------------------------------------------------------------------
@@ -327,4 +351,3 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height)
     // height will be significantly larger than specified on retina displays.
     glViewport(0, 0, width, height);
 }
-
