@@ -26,12 +26,12 @@ class Camera{
     public:
         Camera(glm::vec3 camPos, glm::vec3 up, glm::vec3 direction){
             this->camPos = camPos;
-            glm::vec3 worldUp = glm::vec3(0.0,1.0,0.0);
+            glm::vec3 worldUp = glm::vec3(0.0, 1.0, 0.0);
             this->up = glm::normalize(up);
             this->direction = glm::normalize(direction);
 
             speed = 2.5;
-            sensitivity = 0.7f;
+            sensitivity = 0.6f;
 
             yaw = -90.0f;
             pitch =  0.0f;
@@ -39,7 +39,7 @@ class Camera{
 
         Camera(glm::vec3 camPos, glm::vec3 up, glm::vec3 direction, float speed, float sensitivity){
             this->camPos = camPos;
-            glm::vec3 worldUp = glm::vec3(0.0,1.0,0.0);
+            glm::vec3 worldUp = glm::vec3(0.0, 1.0, 0.0);
             this->up = glm::normalize(up);
             this->direction = glm::normalize(direction);
 
@@ -68,18 +68,19 @@ class Camera{
         };
 
         glm::mat4 GetMatrix(){
-            glm::vec3 newV = glm::normalize(up);//up
-            glm::vec3 newN = glm::normalize(direction);//direction
-            glm::vec3 newU = glm::cross(newV, newN);
-            float modelToCam[16] = {newU.x, newU.y, newU.z, -camPos.x,
-                                    newV.x, newV.y, newV.z, -camPos.y,
-                                    newN.x, newN.y, newN.z, -camPos.z,
-                                    0.0f, 0.0f, 0.0f, 1.0f};
+            // glm::vec3 newV = glm::normalize(up);//up
+            // glm::vec3 newN = glm::normalize(direction);//direction
+            // glm::vec3 newU = glm::cross(newV, newN);///right
+            // float modelToCam[16] = {newU.x, newU.y, newU.z, -camPos.x,
+            //                         newV.x, newV.y, newV.z, -camPos.y,
+            //                         newN.x, newN.y, newN.z, -camPos.z,
+            //                         0.0f, 0.0f, 0.0f, 1.0f};
 
-            //you must transpose due to column major ordering
-            glm::mat4 modelToCamTransformation = glm::transpose(glm::make_mat4(modelToCam));
+            // //you must transpose due to column major ordering
+            // glm::mat4 modelToCamTransformation = glm::transpose(glm::make_mat4(modelToCam));
 
-            return modelToCamTransformation;
+            // return modelToCamTransformation;
+            return glm::lookAt(camPos, camPos - direction, up);
         }
 
         // processes input received from a mouse input system. Expects the offset value in both the x and y direction.
@@ -95,13 +96,10 @@ class Camera{
             //pitch axis: right, x
             glm::vec3 right = glm::cross(up, direction);
             QuaternionRotate(right, yoffset, up);
-            
-            //recalculate direction
-            right = glm::cross(up, direction);
-            direction = glm::cross(right, up);
+            QuaternionRotate(right, yoffset, direction);
         }
 
-        void QuaternionRotate(glm::vec3& axis, float angle, glm::vec3& direction)
+        void QuaternionRotate(glm::vec3& axis, float angle, glm::vec3& point)
         {
             float angleRad = glm::radians(angle);
             axis = glm::normalize(axis);
@@ -111,9 +109,8 @@ class Camera{
             glm::vec3 qv =  v * axis;
 
             glm::quat rot = glm::quat(w, qv);
-            direction = rot * direction;
+            point = glm::normalize(rot * point);
         }
-
 
     private:
         glm::vec3 camPos;
