@@ -16,8 +16,8 @@
 using namespace std;
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
+void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void processInput(GLFWwindow *window);
-glm::mat4 lookaAt(glm::vec3 camPos, glm::vec3 target, glm::vec3 U);
 
 // settings
 const unsigned int SCR_WIDTH = 800;
@@ -29,6 +29,13 @@ glm::vec3 V = glm::vec3(0.0f, 1.0f, 0.0f); //Up
 glm::vec3 N = glm::vec3(0.0f, 0.0f, 1.0f); //direction (Not such a great name since it points opposite to the side the camera is facing)
 Camera camera(glm::vec3(0.0f, 0.0f, 3.0f), V, N);
 
+//Perspective
+float FOV = 90.0f;
+
+//Mouse control
+float lastX = SCR_WIDTH / 2.0f;
+float lastY = SCR_HEIGHT / 2.0f;
+bool firstMouse = true;
 
 // timing
 float deltaTime = 0.0f;	// time between current frame and last frame
@@ -54,6 +61,12 @@ int main()
     }
     glfwMakeContextCurrent(window);// introduce window into current context
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+    glfwSetCursorPosCallback(window, mouse_callback);
+    //glfwSetScrollCallback(window, scroll_callback);
+
+    // tell GLFW to capture our mouse
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+
     
     //Load GLAD to configure for OpenGL
     gladLoadGL();
@@ -282,7 +295,7 @@ int main()
 
         //perspective
         glm::mat4 projection;
-        projection = glm::perspective(glm::radians(45.0f), (float) SCR_WIDTH / (float) SCR_HEIGHT, 0.1f, 100.0f);
+        projection = glm::perspective(glm::radians(FOV/2), (float) SCR_WIDTH / (float) SCR_HEIGHT, 0.1f, 100.0f);
 
         //2. use shader Object
         shaderProgram.use();
@@ -309,7 +322,7 @@ int main()
             model = glm::translate(model, cubePositions[i]);
             float angle = 20.0f * i; 
             model = glm::rotate(model, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
-            model = glm::rotate(model, (float)glfwGetTime() * glm::radians(50.0f), glm::vec3(0.5f, 1.0f, 0.0f));  
+            //model = glm::rotate(model, (float)glfwGetTime() * glm::radians(50.0f), glm::vec3(0.5f, 1.0f, 0.0f));  
 
             int modelLoc = glGetUniformLocation(shaderProgram.shaderProgram, "model");
             glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
@@ -350,4 +363,32 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height)
     // make sure the viewport matches the new window dimensions; note that width and 
     // height will be significantly larger than specified on retina displays.
     glViewport(0, 0, width, height);
+}
+
+// glfw: whenever the mouse moves, this callback is called
+// -------------------------------------------------------
+void mouse_callback(GLFWwindow* window, double xposIn, double yposIn)
+{
+    //if mouse is all the way to the right I want to yaw 90
+    //if mouse if all the way to the top I want to pitch 90
+
+    float xpos = static_cast<float>(xposIn);
+    float ypos = static_cast<float>(yposIn);
+
+    if (firstMouse)
+    {
+        lastX = xpos;
+        lastY = ypos;
+        firstMouse = false;
+    }
+
+    float xoffset = (xpos - lastX)/(SCR_WIDTH / 2.0f) * (FOV/2);
+    float yoffset = (lastY - ypos)/(SCR_HEIGHT / 2.0f) * (FOV/2);
+
+    lastX = xpos;
+    lastY = ypos;
+
+    // float xoffset = xpos - lastX;
+    // float yoffset = lastY - ypos; // reversed since y-coordinates go from bottom to top
+    camera.ProcessMouseMovement(xoffset,yoffset);
 }
