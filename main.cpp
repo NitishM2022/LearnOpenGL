@@ -30,7 +30,7 @@ glm::vec3 N = glm::vec3(0.0f, 0.0f, 1.0f); //direction (Not such a great name si
 Camera camera(glm::vec3(0.0f, 0.0f, 3.0f), V, N);
 
 //Perspective
-float FOV = 90.0f;
+float FOV = 45.0f;
 
 //Mouse control
 float lastX = SCR_WIDTH / 2.0f;
@@ -295,8 +295,8 @@ int main()
 
         //perspective
         glm::mat4 projection;
-        projection = glm::perspective(glm::radians(FOV/2), (float) SCR_WIDTH / (float) SCR_HEIGHT, 0.1f, 100.0f);
-        //projection = camera.camToProjMatrix(FOV, (float) SCR_WIDTH, (float) SCR_HEIGHT, 0.1f, 100.0f);
+        //projection = glm::perspective(glm::radians(FOV), (float) SCR_WIDTH / (float) SCR_HEIGHT, 0.1f, 100.0f);
+        projection = camera.camToProjMatrix(FOV, (float) SCR_WIDTH, (float) SCR_HEIGHT, 0.1f, 100.0f);
 
 
         //2. use shader Object
@@ -324,7 +324,7 @@ int main()
             model = glm::translate(model, cubePositions[i]);
             float angle = 20.0f * i; 
             model = glm::rotate(model, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
-            //model = glm::rotate(model, (float)glfwGetTime() * glm::radians(50.0f), glm::vec3(0.5f, 1.0f, 0.0f));  
+            model = glm::rotate(model, (float)glfwGetTime() * glm::radians(50.0f), glm::vec3(0.5f, 1.0f, 0.0f));  
 
             int modelLoc = glGetUniformLocation(shaderProgram.shaderProgram, "model");
             glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));

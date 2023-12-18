@@ -98,23 +98,22 @@ class Camera{
 
         //broken rn
         glm::mat4 camToProjMatrix(float FOV, float width, float height, float nearZ, float farZ){
-            FOV = glm::radians(FOV/2.0f);
+            float hFOV = glm::radians(FOV/2.0f);
             float ar = width/height;
-            float A = (-nearZ - farZ)/(nearZ - farZ);
-            float B = (2 * nearZ * farZ)/(nearZ - farZ);
+            float A = (farZ + nearZ)/(farZ - nearZ);
+            float B = - (2 * nearZ * farZ)/(farZ - nearZ);
 
-            // Create translation and rotation matrix
             // In glm we access elements as mat[col][row] due to column-major layout
-            glm::mat4 rotation = glm::mat4(1.0f);
-            rotation[0][0] = ar / (tan(FOV)); // First column, first row
-            rotation[1][1] = 1.0f / (tan(FOV));
-            rotation[2][2] = A; 
-            rotation[2][3] = 1.0f; 
-            rotation[3][2] = B; 
-            rotation[3][3] = 0.0f; 
+            glm::mat4 projection = glm::mat4();
+            projection[0][0] = 1.0f / (ar * tan(hFOV)); // First column, first row
+            projection[1][1] = 1.0f / (tan(hFOV));
 
-            // Return lookAt matrix as combination of translation and rotation matrix
-            return rotation; // Remember to read from right to left (first translation then rotation)
+            //idk why these 2 are negative
+            projection[2][2] = -A; 
+            projection[2][3] = -1.0f; 
+            projection[3][2] = B; 
+
+            return projection; 
         }
 
         // processes input received from a mouse input system. Expects the offset value in both the x and y direction.
