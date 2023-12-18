@@ -26,11 +26,11 @@ class Camera{
     public:
         Camera(glm::vec3 camPos, glm::vec3 up, glm::vec3 direction){
             this->camPos = camPos;
-            glm::vec3 worldUp = glm::vec3(0.0, 1.0, 0.0);
+            worldUp = glm::vec3(0.0f, 1.0f, 0.0f);
             this->up = glm::normalize(up);
             this->direction = glm::normalize(direction);
 
-            speed = 2.5;
+            speed = 2.5f;
             sensitivity = 0.6f;
 
             yaw = -90.0f;
@@ -39,7 +39,7 @@ class Camera{
 
         Camera(glm::vec3 camPos, glm::vec3 up, glm::vec3 direction, float speed, float sensitivity){
             this->camPos = camPos;
-            glm::vec3 worldUp = glm::vec3(0.0, 1.0, 0.0);
+            worldUp = glm::vec3(0.0f, 1.0f, 0.0f);
             this->up = glm::normalize(up);
             this->direction = glm::normalize(direction);
 
@@ -90,16 +90,34 @@ class Camera{
             yoffset *= sensitivity;
 
             //updated up and direction vector using updated angles
-            //yaw axis: up, y
-            QuaternionRotate(up, xoffset, direction);
-
             //pitch axis: right, x
-            glm::vec3 right = glm::cross(up, direction);
+            pitch += yoffset;
+            // make sure that when pitch is out of bounds, screen doesn't get flipped
+            if (constrainPitch)
+            {
+                if (pitch > 89.0f){
+                    pitch = 89.0f;
+                    yoffset = 0;
+                }
+                if (pitch < -89.0f){
+                    pitch = -89.0f;
+                    yoffset = 0;
+                }
+            }
+
+            glm::vec3 right = glm::normalize(glm::cross(up, direction));
             QuaternionRotate(right, yoffset, up);
             QuaternionRotate(right, yoffset, direction);
+
+            //yaw axis: up, y (locked yaw to worldUp axis to prevent unwanted roll)
+            QuaternionRotate(worldUp, xoffset, direction);
+
+            //by rotating direction around WorldUp we must recalculate both right and up
+            right = glm::normalize(glm::cross(worldUp, direction));
+            up = glm::normalize(glm::cross(direction, right));
         }
 
-        void QuaternionRotate(glm::vec3& axis, float angle, glm::vec3& point)
+        void QuaternionRotate(glm::vec3 axis, float angle, glm::vec3& point)
         {
             float angleRad = glm::radians(angle);
             axis = glm::normalize(axis);
