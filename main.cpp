@@ -291,11 +291,13 @@ int main()
         glBindTexture(GL_TEXTURE_2D, texture2);
 
         //you must transpose due to column major ordering
-        glm::mat4 view = camera.GetMatrix();
+        glm::mat4 view = camera.worldToCamMatrix();
 
         //perspective
         glm::mat4 projection;
         projection = glm::perspective(glm::radians(FOV/2), (float) SCR_WIDTH / (float) SCR_HEIGHT, 0.1f, 100.0f);
+        //projection = camera.camToProjMatrix(FOV, (float) SCR_WIDTH, (float) SCR_HEIGHT, 0.1f, 100.0f);
+
 
         //2. use shader Object
         shaderProgram.use();

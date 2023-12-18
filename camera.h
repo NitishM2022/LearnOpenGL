@@ -67,20 +67,54 @@ class Camera{
                 camPos += glm::normalize(glm::cross(up, direction)) * cameraSpeed;
         };
 
-        glm::mat4 GetMatrix(){
-            // glm::vec3 newV = glm::normalize(up);//up
-            // glm::vec3 newN = glm::normalize(direction);//direction
-            // glm::vec3 newU = glm::cross(newV, newN);///right
-            // float modelToCam[16] = {newU.x, newU.y, newU.z, -camPos.x,
-            //                         newV.x, newV.y, newV.z, -camPos.y,
-            //                         newN.x, newN.y, newN.z, -camPos.z,
-            //                         0.0f, 0.0f, 0.0f, 1.0f};
+        glm::mat4 worldToCamMatrix(){
+            // 1. Normalize direction
+            glm::vec3 newN = glm::normalize(direction);
+            // 2. Get positive right axis vector
+            glm::vec3 newU = glm::normalize(glm::cross(glm::normalize(worldUp), newN));
+            // 3. Calculate camera up vector
+            glm::vec3 newV = glm::cross(newN, newU);
 
-            // //you must transpose due to column major ordering
-            // glm::mat4 modelToCamTransformation = glm::transpose(glm::make_mat4(modelToCam));
+            // Create translation and rotation matrix
+            // In glm we access elements as mat[col][row] due to column-major layout
+            glm::mat4 translation = glm::mat4(1.0f); // Identity matrix by default
+            translation[3][0] = -camPos.x; // Third column, first row
+            translation[3][1] = -camPos.y;
+            translation[3][2] = -camPos.z;
+            glm::mat4 rotation = glm::mat4(1.0f);
+            rotation[0][0] = newU.x; // First column, first row
+            rotation[1][0] = newU.y;
+            rotation[2][0] = newU.z;
+            rotation[0][1] = newV.x; // First column, second row
+            rotation[1][1] = newV.y;
+            rotation[2][1] = newV.z;
+            rotation[0][2] = newN.x; // First column, third row
+            rotation[1][2] = newN.y;
+            rotation[2][2] = newN.z; 
 
-            // return modelToCamTransformation;
-            return glm::lookAt(camPos, camPos - direction, up);
+            // Return lookAt matrix as combination of translation and rotation matrix
+            return rotation * translation; // Remember to read from right to left (first translation then rotation)
+        }
+
+        //broken rn
+        glm::mat4 camToProjMatrix(float FOV, float width, float height, float nearZ, float farZ){
+            FOV = glm::radians(FOV/2.0f);
+            float ar = width/height;
+            float A = (-nearZ - farZ)/(nearZ - farZ);
+            float B = (2 * nearZ * farZ)/(nearZ - farZ);
+
+            // Create translation and rotation matrix
+            // In glm we access elements as mat[col][row] due to column-major layout
+            glm::mat4 rotation = glm::mat4(1.0f);
+            rotation[0][0] = ar / (tan(FOV)); // First column, first row
+            rotation[1][1] = 1.0f / (tan(FOV));
+            rotation[2][2] = A; 
+            rotation[2][3] = 1.0f; 
+            rotation[3][2] = B; 
+            rotation[3][3] = 0.0f; 
+
+            // Return lookAt matrix as combination of translation and rotation matrix
+            return rotation; // Remember to read from right to left (first translation then rotation)
         }
 
         // processes input received from a mouse input system. Expects the offset value in both the x and y direction.
@@ -106,17 +140,51 @@ class Camera{
             }
 
             glm::vec3 right = glm::normalize(glm::cross(up, direction));
+
+            /* old code when simulating euler angles with Quaternions
             QuaternionRotate(right, yoffset, up);
             QuaternionRotate(right, yoffset, direction);
 
-            //yaw axis: up, y (locked yaw to worldUp axis to prevent unwanted roll)
+            yaw axis: up, y (locked yaw to worldUp axis to prevent unwanted roll)
             QuaternionRotate(worldUp, xoffset, direction);
+            */
 
+            CameraRotate(worldUp, right, xoffset, yoffset, direction);
             //by rotating direction around WorldUp we must recalculate both right and up
             right = glm::normalize(glm::cross(worldUp, direction));
             up = glm::normalize(glm::cross(direction, right));
         }
 
+        //combined multiple quaternion
+        void CameraRotate(glm::vec3 axis1, glm::vec3 axis2, float angle1, float angle2, glm::vec3& point)
+        {
+
+            //quat 1
+            float angleRad1 = glm::radians(angle1);
+            axis1 = glm::normalize(axis1);
+
+            float w = glm::cos(angleRad1 / 2);
+            float v = glm::sin(angleRad1 / 2);
+            glm::vec3 qv =  v * axis1;
+
+            glm::quat rot1 = glm::quat(w, qv);
+            
+            //quat 2
+            float angleRad2 = glm::radians(angle2);
+            axis2 = glm::normalize(axis2);
+
+            w = glm::cos(angleRad2 / 2);
+            v = glm::sin(angleRad2 / 2);
+            qv =  v * axis2;
+
+            glm::quat rot2 = glm::quat(w, qv);
+            
+            glm::quat rot = rot1 * rot2;
+            
+            point = glm::normalize(rot * point);
+        }
+
+        //not neccesary but cool to understand/look at
         void QuaternionRotate(glm::vec3 axis, float angle, glm::vec3& point)
         {
             float angleRad = glm::radians(angle);
