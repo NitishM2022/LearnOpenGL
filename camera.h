@@ -197,7 +197,7 @@ class Camera{
             point = glm::normalize(rot * point);
         }
 
-    private:
+//    private:
         glm::vec3 camPos;
         glm::vec3 direction;
         glm::vec3 worldUp;
