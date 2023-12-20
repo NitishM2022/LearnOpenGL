@@ -176,7 +176,7 @@ int main()
     lightingShader.setInt("material.diffuse", 0);//dont forget to bind the texture in the loop
 
     //unsigned int specularMap = loadTexture("textures/container2Specular.png");
-    unsigned int specularMap = loadTexture("textures/container2Specular.png");
+    unsigned int specularMap = loadTexture("textures/container2SpecularColor.png");
     lightingShader.use();
     lightingShader.setInt("material.specular", 1);//dont forget to bind the texture in the loop
 
@@ -209,6 +209,7 @@ int main()
         lightingShader.setVec3("light.position",  camera.camPos);
         lightingShader.setVec3("light.direction", -camera.direction);
         lightingShader.setFloat("light.cutOff",   glm::cos(glm::radians(12.5f)));
+        lightingShader.setFloat("light.outerCutOff", glm::cos(glm::radians(17.5f)));
         //lightingShader.setVec3("light.direction", -0.2f, -1.0f, -0.3f); 	    
         lightingShader.setVec3("light.ambient", 0.2f, 0.2f, 0.2f); 
         lightingShader.setVec3("light.diffuse", 0.5f, 0.5f, 0.5f);
