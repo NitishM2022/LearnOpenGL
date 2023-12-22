@@ -55,6 +55,10 @@
     "vector": "cpp",
     "algorithm": "cpp",
     "fstream": "cpp",
-    "iomanip": "cpp"
+    "iomanip": "cpp",
+    "__tree": "cpp",
+    "list": "cpp",
+    "map": "cpp",
+    "set": "cpp"
   }
 }
