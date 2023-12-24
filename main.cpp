@@ -1,4 +1,5 @@
 #include <iostream>
+#include <map>
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
@@ -79,6 +80,10 @@ int main()
 
     //the z value is stored for each fragment and if the fragment wasnt to output its color, its z value must be above the current one
     glEnable(GL_DEPTH_TEST);  
+
+    //enable blending
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);  
 
     //build and compile shaders
     Shader shader("shaders/blending.vs", "shaders/blending.fs");
@@ -176,12 +181,12 @@ int main()
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
     glBindVertexArray(0);
 
-    //grass VAO
-    unsigned int grassVAO, grassVBO;
-    glGenVertexArrays(1, &grassVAO);
-    glGenBuffers(1, &grassVBO);
-    glBindVertexArray(grassVAO);
-    glBindBuffer(GL_ARRAY_BUFFER, grassVBO);
+    //window VAO
+    unsigned int windowVAO, windowVBO;
+    glGenVertexArrays(1, &windowVAO);
+    glGenBuffers(1, &windowVBO);
+    glBindVertexArray(windowVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, windowVBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(transparentVertices), &transparentVertices, GL_STATIC_DRAW);
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
@@ -193,14 +198,22 @@ int main()
     // -------------
     unsigned int cubeTexture  = loadTexture("textures/marble.jpg");
     unsigned int floorTexture = loadTexture("textures/metal.png");
-    unsigned int grassTexture = loadTexture("textures/grass.png");
+    //unsigned int grassTexture = loadTexture("textures/grass.png");
+    unsigned int windowTexture = loadTexture("textures/window.png");
 
-    vector<glm::vec3> vegetation;
-    vegetation.push_back(glm::vec3(-1.5f,  0.0f, -0.48f));
-    vegetation.push_back(glm::vec3( 1.5f,  0.0f,  0.51f));
-    vegetation.push_back(glm::vec3( 0.0f,  0.0f,  0.7f));
-    vegetation.push_back(glm::vec3(-0.3f,  0.0f, -2.3f));
-    vegetation.push_back(glm::vec3( 0.5f,  0.0f, -0.6f));  
+    vector<glm::vec3> windows;
+    windows.push_back(glm::vec3(-1.5f,  0.0f, -0.48f));
+    windows.push_back(glm::vec3( 1.5f,  0.0f,  0.51f));
+    windows.push_back(glm::vec3( 0.0f,  0.0f,  0.7f));
+    windows.push_back(glm::vec3(-0.3f,  0.0f, -2.3f));
+    windows.push_back(glm::vec3( 0.5f,  0.0f, -0.6f)); 
+
+    map<float, glm::vec3> sorted;
+    for (unsigned int i = 0; i < windows.size(); i++)
+    {
+        float distance = glm::length(camera.camPos - windows[i]);
+        sorted[distance] = windows[i];
+    } 
 
     // shader configuration
     // --------------------
@@ -253,13 +266,15 @@ int main()
         shader.setMat4("model", model);
         glDrawArrays(GL_TRIANGLES, 0, 36);
 
-        //draw grass
-        glBindVertexArray(grassVAO);
-        glBindTexture(GL_TEXTURE_2D, grassTexture);  
-        for(unsigned int i = 0; i < vegetation.size(); i++) 
+        //draw window
+        glBindVertexArray(windowVAO);
+        glBindTexture(GL_TEXTURE_2D, windowTexture);
+
+        //draw in reverse order (farthest to nearest)  
+        for(std::map<float,glm::vec3>::reverse_iterator it = sorted.rbegin(); it != sorted.rend(); ++it) 
         {
             model = glm::mat4(1.0f);
-            model = glm::translate(model, vegetation[i]);				
+            model = glm::translate(model, it->second);				
             shader.setMat4("model", model);
             glDrawArrays(GL_TRIANGLES, 0, 6);
         }  
@@ -368,8 +383,15 @@ unsigned int loadTexture(char const *path)
         glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
         glGenerateMipmap(GL_TEXTURE_2D);
 
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        //we dont want the transparent part of the texture to repeat into a colored area, so we clamp it to the edge
+        if(format == GL_RGBA){
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        }else{
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        }
+
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
