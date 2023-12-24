@@ -82,8 +82,8 @@ int main()
 
     // vertices drawn will influence the stencil buffer while active, after write is closed, rest of fragments will be discarded.
     glEnable(GL_STENCIL_TEST);   
-    glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
-    glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE); 
+    glStencilFunc(GL_NOTEQUAL, 1, 0xFF);//we can draw fragment to the screen if the stencil buffer is equal to 0
+    glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);//replace stencil buffer with ref value defined in StencilFunc
 
     //build and compile shaders
     Shader shader("shaders/depth.vs", "shaders/depth.fs");
@@ -212,19 +212,20 @@ int main()
         shader.setMat4("projection", projection);
 
         // draw floor as normal, but don't write the floor to the stencil buffer, we only care about the containers. We set its mask to 0x00 to not write to the stencil buffer.
-        glStencilMask(0x00);
+        glStencilMask(0x00);//prevent writes to buffer
         // floor
         glBindVertexArray(planeVAO);
         glBindTexture(GL_TEXTURE_2D, floorTexture);
         shader.setMat4("model", glm::mat4(1.0f));
-        glDrawArrays(GL_TRIANGLES, 0, 6);
+        glDrawArrays(GL_TRIANGLES, 0, 6);//we can still draw since stencil buffer is set to 0
         glBindVertexArray(0);
 
 
         // 1st. render pass, draw objects as normal, writing to the stencil buffer
         // --------------------------------------------------------------------
-        glStencilFunc(GL_ALWAYS, 1, 0xFF);
-        glStencilMask(0xFF);
+        glStencilFunc(GL_ALWAYS, 1, 0xFF);//we can draw fragment regardless of the value in the stencil buffer
+        glStencilMask(0xFF);//allow writes (so since we pass everything the 1 is being passed and since we are REPLACE 1 is being written to the buffer)
+        //so now the stencil buffer has 1s in every place we drew the cube
         // cubes
         glBindVertexArray(cubeVAO);
         glActiveTexture(GL_TEXTURE0);
@@ -241,8 +242,8 @@ int main()
         // Because the stencil buffer is now filled with several 1s. The parts of the buffer that are 1 are not drawn, thus only drawing 
         // the objects' size differences, making it look like borders.
         // -----------------------------------------------------------------------------------------------------------------------------
-        glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
-        glStencilMask(0x00);
+        glStencilFunc(GL_NOTEQUAL, 1, 0xFF);//we can only draw fragment if the buffer does not contain 1 where we are trying to draw
+        glStencilMask(0x00);//prevent writes
         glDisable(GL_DEPTH_TEST);
         shaderSingleColor.use();
         float scale = 1.1f;
