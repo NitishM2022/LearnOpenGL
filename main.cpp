@@ -80,14 +80,8 @@ int main()
     //the z value is stored for each fragment and if the fragment wasnt to output its color, its z value must be above the current one
     glEnable(GL_DEPTH_TEST);  
 
-    // vertices drawn will influence the stencil buffer while active, after write is closed, rest of fragments will be discarded.
-    glEnable(GL_STENCIL_TEST);   
-    glStencilFunc(GL_NOTEQUAL, 1, 0xFF);//we can draw fragment to the screen if the stencil buffer is equal to 0
-    glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);//replace stencil buffer with ref value defined in StencilFunc
-
     //build and compile shaders
-    Shader shader("shaders/depth.vs", "shaders/depth.fs");
-    Shader shaderSingleColor("shaders/shaderSingleColor.vs", "shaders/shaderSingleColor.fs");
+    Shader shader("shaders/blending.vs", "shaders/blending.fs");
 
 // set up vertex data (and buffer(s)) and configure vertex attributes
     // ------------------------------------------------------------------
@@ -145,6 +139,17 @@ int main()
         -5.0f, -0.5f, -5.0f,  0.0f, 2.0f,
          5.0f, -0.5f, -5.0f,  2.0f, 2.0f								
     };
+    float transparentVertices[] = {
+        // positions         // texture Coords (swapped y coordinates because texture is flipped upside down)
+        0.0f,  0.5f,  0.0f,  0.0f,  0.0f,
+        0.0f, -0.5f,  0.0f,  0.0f,  1.0f,
+        1.0f, -0.5f,  0.0f,  1.0f,  1.0f,
+
+        0.0f,  0.5f,  0.0f,  0.0f,  0.0f,
+        1.0f, -0.5f,  0.0f,  1.0f,  1.0f,
+        1.0f,  0.5f,  0.0f,  1.0f,  0.0f
+    };
+
     // cube VAO
     unsigned int cubeVAO, cubeVBO;
     glGenVertexArrays(1, &cubeVAO);
@@ -157,6 +162,7 @@ int main()
     glEnableVertexAttribArray(1);
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
     glBindVertexArray(0);
+
     // plane VAO
     unsigned int planeVAO, planeVBO;
     glGenVertexArrays(1, &planeVAO);
@@ -170,10 +176,31 @@ int main()
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
     glBindVertexArray(0);
 
+    //grass VAO
+    unsigned int grassVAO, grassVBO;
+    glGenVertexArrays(1, &grassVAO);
+    glGenBuffers(1, &grassVBO);
+    glBindVertexArray(grassVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, grassVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(transparentVertices), &transparentVertices, GL_STATIC_DRAW);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+    glBindVertexArray(0);
+
     // load textures
     // -------------
     unsigned int cubeTexture  = loadTexture("textures/marble.jpg");
     unsigned int floorTexture = loadTexture("textures/metal.png");
+    unsigned int grassTexture = loadTexture("textures/grass.png");
+
+    vector<glm::vec3> vegetation;
+    vegetation.push_back(glm::vec3(-1.5f,  0.0f, -0.48f));
+    vegetation.push_back(glm::vec3( 1.5f,  0.0f,  0.51f));
+    vegetation.push_back(glm::vec3( 0.0f,  0.0f,  0.7f));
+    vegetation.push_back(glm::vec3(-0.3f,  0.0f, -2.3f));
+    vegetation.push_back(glm::vec3( 0.5f,  0.0f, -0.6f));  
 
     // shader configuration
     // --------------------
@@ -197,22 +224,16 @@ int main()
         // render
         // ------
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         //must set shaders in this order
-        shaderSingleColor.use();
+        shader.use();
         glm::mat4 model = glm::mat4(1.0f);
         glm::mat4 view = camera.worldToCamMatrix();
         glm::mat4 projection = camera.camToProjMatrix(FOV, (float) SCR_WIDTH, (float) SCR_HEIGHT, 0.1f, 100.0f);
-        shaderSingleColor.setMat4("view", view);
-        shaderSingleColor.setMat4("projection", projection);
-
-        shader.use();
         shader.setMat4("view", view);
         shader.setMat4("projection", projection);
 
-        // draw floor as normal, but don't write the floor to the stencil buffer, we only care about the containers. We set its mask to 0x00 to not write to the stencil buffer.
-        glStencilMask(0x00);//prevent writes to buffer
         // floor
         glBindVertexArray(planeVAO);
         glBindTexture(GL_TEXTURE_2D, floorTexture);
@@ -220,12 +241,6 @@ int main()
         glDrawArrays(GL_TRIANGLES, 0, 6);//we can still draw since stencil buffer is set to 0
         glBindVertexArray(0);
 
-
-        // 1st. render pass, draw objects as normal, writing to the stencil buffer
-        // --------------------------------------------------------------------
-        glStencilFunc(GL_ALWAYS, 1, 0xFF);//we can draw fragment regardless of the value in the stencil buffer
-        glStencilMask(0xFF);//allow writes (so since we pass everything the 1 is being passed and since we are REPLACE 1 is being written to the buffer)
-        //so now the stencil buffer has 1s in every place we drew the cube
         // cubes
         glBindVertexArray(cubeVAO);
         glActiveTexture(GL_TEXTURE0);
@@ -238,32 +253,16 @@ int main()
         shader.setMat4("model", model);
         glDrawArrays(GL_TRIANGLES, 0, 36);
 
-        // 2nd. render pass: now draw slightly scaled versions of the objects, this time disabling stencil writing.
-        // Because the stencil buffer is now filled with several 1s. The parts of the buffer that are 1 are not drawn, thus only drawing 
-        // the objects' size differences, making it look like borders.
-        // -----------------------------------------------------------------------------------------------------------------------------
-        glStencilFunc(GL_NOTEQUAL, 1, 0xFF);//we can only draw fragment if the buffer does not contain 1 where we are trying to draw
-        glStencilMask(0x00);//prevent writes
-        glDisable(GL_DEPTH_TEST);
-        shaderSingleColor.use();
-        float scale = 1.1f;
-        // cubes
-        glBindVertexArray(cubeVAO);
-        glBindTexture(GL_TEXTURE_2D, cubeTexture);
-        model = glm::mat4(1.0f);
-        model = glm::translate(model, glm::vec3(-1.0f, 0.0f, -1.0f));
-        model = glm::scale(model, glm::vec3(scale, scale, scale));
-        shaderSingleColor.setMat4("model", model);
-        glDrawArrays(GL_TRIANGLES, 0, 36);
-        model = glm::mat4(1.0f);
-        model = glm::translate(model, glm::vec3(2.0f, 0.0f, 0.0f));
-        model = glm::scale(model, glm::vec3(scale, scale, scale));
-        shaderSingleColor.setMat4("model", model);
-        glDrawArrays(GL_TRIANGLES, 0, 36);
-        glBindVertexArray(0);
-        glStencilMask(0xFF);
-        glStencilFunc(GL_ALWAYS, 0, 0xFF);
-        glEnable(GL_DEPTH_TEST);
+        //draw grass
+        glBindVertexArray(grassVAO);
+        glBindTexture(GL_TEXTURE_2D, grassTexture);  
+        for(unsigned int i = 0; i < vegetation.size(); i++) 
+        {
+            model = glm::mat4(1.0f);
+            model = glm::translate(model, vegetation[i]);				
+            shader.setMat4("model", model);
+            glDrawArrays(GL_TRIANGLES, 0, 6);
+        }  
 
 
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
@@ -356,6 +355,7 @@ unsigned int loadTexture(char const *path)
     unsigned char *data = stbi_load(path, &width, &height, &nrComponents, 0);
     if (data)
     {
+        //sets the format of the texture ex: RGB, RGBA (Images with Transparency or Translucency)
         GLenum format;
         if (nrComponents == 1)
             format = GL_RED;
